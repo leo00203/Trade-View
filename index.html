@@ -1,10 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>Mein Dashboard</title>
+  <meta charset="UTF-8" />
+  <title>BTC Dashboard</title>
+
+  <style>
+    body {
+      background: #111;
+      color: #eee;
+      font-family: Arial;
+      padding: 20px;
+    }
+
+    .widget {
+      background: #222;
+      padding: 20px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+    }
+  </style>
 </head>
 <body>
-  <h1>Hallo! Meine Website funktioniert 🎉</h1>
+
+  <h1>Live Markt Dashboard</h1>
+
+  <div class="widget">
+    <h2>BTC Preis</h2>
+    <p id="btc-price">...</p>
+  </div>
+
+  <script>
+    const ws = new WebSocket("wss://stream.binance.com:9443/ws/btcusdt@trade");
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      document.getElementById("btc-price").textContent = data.p;
+    };
+  </script>
+
 </body>
 </html>
