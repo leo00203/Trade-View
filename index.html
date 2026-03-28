@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
   <meta charset="UTF-8" />
   <title>Custom Dashboard</title>
@@ -12,136 +12,194 @@
       padding: 25px;
     }
 
-    h1 {
-      margin-bottom: 30px;
-    }
+    h1 { margin-bottom: 30px; }
 
     .widget {
       background: #1b1b1b;
       padding: 20px;
       margin-bottom: 20px;
-      border-radius: 8px;
+      border-radius: 10px;
       border: 1px solid #333;
     }
 
     .add-box {
       background: #151515;
       padding: 20px;
-      border-radius: 8px;
+      border-radius: 10px;
       margin-bottom: 40px;
       border: 1px solid #444;
     }
 
     input, textarea {
       width: 100%;
-      padding: 8px;
+      padding: 10px;
       margin-top: 5px;
       margin-bottom: 15px;
       background: #1d1d1d;
       border: 1px solid #333;
       color: #fff;
-      border-radius: 5px;
+      border-radius: 6px;
       font-family: monospace;
     }
+
+    textarea { min-height: 120px; }
 
     button {
       padding: 10px 15px;
       background: #007bff;
       border: none;
-      border-radius: 5px;
+      border-radius: 6px;
       color: white;
       cursor: pointer;
+      font-weight: bold;
     }
 
-    button:hover {
-      opacity: 0.8;
+    button:hover { opacity: 0.85; }
+
+    .output {
+      margin-top: 15px;
+      padding: 15px;
+      background: #111;
+      border-radius: 8px;
+      min-height: 40px;
+    }
+
+    iframe {
+      width: 100%;
+      border: none;
+      border-radius: 10px;
+      min-height: 500px;
     }
   </style>
-
 </head>
 <body>
 
-  <h1>🛠️ Custom Code Dashboard</h1>
+<h1>🛠️ Custom Code Dashboard</h1>
 
-  <!-- Box zum Hinzufügen -->
-  <div class="add-box">
-      <h2>Neues Widget hinzufügen</h2>
+<div class="add-box">
+  <h2>Neues Widget hinzufügen</h2>
 
-      <label>Widget Name:</label>
-      <input id="widgetName" placeholder="z.B. BTC Preis, Notiz, API Test usw.">
+  <label>Widget Name:</label>
+  <input id="widgetName" placeholder="z.B. BTC Chart, X Post, Notiz">
 
-      <label>JavaScript Code:</label>
-      <textarea id="widgetCode" rows="6" placeholder="Hier JavaScript einfügen"></textarea>
+  <label>Code / Embed / JSON / JavaScript:</label>
+  <textarea id="widgetCode" placeholder="Hier einfügen:
 
-      <button onclick="addWidget()">Widget hinzufügen</button>
-  </div>
+✔ TradingView Embed Code
+✔ X (Twitter) Post Embed
+✔ iframe
+✔ HTML
+✔ JavaScript
+✔ JSON Dateien (z.B. indicator_Price.json)"></textarea>
 
-  <h2>📦 Deine Widgets</h2>
-  <div id="widgets"></div>
+  <button onclick="addWidget()">Widget hinzufügen</button>
+</div>
 
-  <script>
-    // Widgets aus localStorage laden
-    let widgets = JSON.parse(localStorage.getItem("widgets") || "[]");
+<h2>📦 Deine Widgets</h2>
+<div id="widgets"></div>
 
-    function renderWidgets() {
-      const container = document.getElementById("widgets");
-      container.innerHTML = "";
+<script>
+let widgets = JSON.parse(localStorage.getItem("widgets") || "[]");
 
-      widgets.forEach((w, index) => {
-        const box = document.createElement("div");
-        box.className = "widget";
+function renderWidgets() {
+  const container = document.getElementById("widgets");
+  container.innerHTML = "";
 
-        box.innerHTML = `
-          <h3>${w.name}</h3>
-          <pre>${w.code.replace(/</g, "&lt;")}</pre>
-          <button onclick="runCode(${index})">▶ Code ausführen</button>
-          <button style="margin-left:10px; background:#c62828" onclick="deleteWidget(${index})">🗑 Löschen</button>
-          <div id="output-${index}" style="margin-top:15px; padding:10px; background:#111; border-radius:5px;"></div>
-        `;
+  widgets.forEach((w, index) => {
+    const box = document.createElement("div");
+    box.className = "widget";
 
-        container.appendChild(box);
+    box.innerHTML = `
+      <h3>${w.name}</h3>
+      <button onclick="runCode(${index})">▶ Widget laden</button>
+      <button style="margin-left:10px;background:#c62828" onclick="deleteWidget(${index})">🗑 Löschen</button>
+      <div class="output" id="output-${index}"></div>
+    `;
+
+    container.appendChild(box);
+  });
+}
+
+function addWidget() {
+  const name = document.getElementById("widgetName").value.trim();
+  const code = document.getElementById("widgetCode").value.trim();
+
+  if (!name || !code) {
+    alert("Bitte Name und Code eingeben!");
+    return;
+  }
+
+  widgets.push({ name, code });
+  localStorage.setItem("widgets", JSON.stringify(widgets));
+
+  document.getElementById("widgetName").value = "";
+  document.getElementById("widgetCode").value = "";
+
+  renderWidgets();
+}
+
+function runCode(index) {
+  const outputBox = document.getElementById(`output-${index}`);
+  const code = widgets[index].code;
+
+  outputBox.innerHTML = "";
+
+  try {
+    // 1. TradingView Script / X Post Script
+    if (code.includes("<script")) {
+      outputBox.innerHTML = code;
+
+      const scripts = outputBox.querySelectorAll("script");
+      scripts.forEach(oldScript => {
+        const newScript = document.createElement("script");
+
+        if (oldScript.src) {
+          newScript.src = oldScript.src;
+        } else {
+          newScript.textContent = oldScript.textContent;
+        }
+
+        document.body.appendChild(newScript);
       });
+      return;
     }
 
-    // Neues Widget speichern + anzeigen
-    function addWidget() {
-      const name = document.getElementById("widgetName").value.trim();
-      const code = document.getElementById("widgetCode").value.trim();
-
-      if (!name || !code) return alert("Bitte Name und Code eingeben!");
-
-      widgets.push({ name, code });
-      localStorage.setItem("widgets", JSON.stringify(widgets));
-
-      document.getElementById("widgetName").value = "";
-      document.getElementById("widgetCode").value = "";
-
-      renderWidgets();
+    // 2. iframe (z.B. TradingView direkt als Chart)
+    if (code.includes("<iframe")) {
+      outputBox.innerHTML = code;
+      return;
     }
 
-    // Code ausführen (mit Sandbox-Ausgabe)
-    function runCode(index) {
-      const outputBox = document.getElementById(`output-${index}`);
-      outputBox.innerHTML = "Wird ausgeführt...";
-
-      try {
-        const result = new Function("output", widgets[index].code);
-        result((msg) => outputBox.innerHTML = msg);
-      } catch (e) {
-        outputBox.innerHTML = "❌ Fehler: " + e;
-      }
+    // 3. JSON Datei anzeigen (wie deine indicator_Price.json)
+    if (code.trim().startsWith("{") || code.trim().startsWith("[")) {
+      const json = JSON.parse(code);
+      outputBox.innerHTML = "<pre style='white-space:pre-wrap'>" + JSON.stringify(json, null, 2) + "</pre>";
+      return;
     }
 
-    // Widget löschen
-    function deleteWidget(index) {
-      widgets.splice(index, 1);
-      localStorage.setItem("widgets", JSON.stringify(widgets));
-      renderWidgets();
+    // 4. Normales HTML
+    if (code.includes("<div") || code.includes("<p") || code.includes("<span")) {
+      outputBox.innerHTML = code;
+      return;
     }
 
-    // Beim Laden rendern
-    renderWidgets();
-  </script>
+    // 5. JavaScript Code mit output()
+    const result = new Function("output", code);
+    result((msg) => outputBox.innerHTML = msg);
+
+  } catch (e) {
+    outputBox.innerHTML = "❌ Fehler: " + e;
+  }
+}
+
+function deleteWidget(index) {
+  widgets.splice(index, 1);
+  localStorage.setItem("widgets", JSON.stringify(widgets));
+  renderWidgets();
+}
+
+renderWidgets();
+</script>
 
 </body>
 </html>
